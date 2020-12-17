@@ -128,7 +128,7 @@ class ItemDataService {
     const feedbackItem: IFeedbackItemDocument = await this.getFeedbackItem(boardId, feedbackItemId);
 
     if (!feedbackItem) {
-      console.log(`Cannot increment upvote for a non-existent feedback item. Board: ${boardId}, Item: ${feedbackItemId}`);
+      //`Cannot increment upvote for a non-existent feedback item. Board: ${boardId}, Item: ${feedbackItemId}`
       return undefined;
     }
 
@@ -145,7 +145,7 @@ class ItemDataService {
     const feedbackItem: IFeedbackItemDocument = await this.getFeedbackItem(boardId, feedbackItemId);
 
     if (!feedbackItem) {
-      console.log(`Cannot update title for a non-existent feedback item. Board: ${boardId}, Item: ${feedbackItemId}`);
+      //`Cannot update title for a non-existent feedback item. Board: ${boardId}, Item: ${feedbackItemId}`
       return undefined;
     }
 
