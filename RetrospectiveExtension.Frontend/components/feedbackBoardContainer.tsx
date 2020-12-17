@@ -32,6 +32,7 @@ import { TooltipHost } from 'office-ui-fabric-react/lib/Tooltip';
 import { isHostedAzureDevOps } from '../utilities/azureDevOpsContextHelper';
 import moment = require('moment');
 import { shareBoardHelper } from '../utilities/shareBoardHelper';
+import { TeamMember } from 'VSS/WebApi/Contracts';
 
 export interface FeedbackBoardContainerProps {
   projectId: string;
@@ -70,6 +71,8 @@ export interface FeedbackBoardContainerState {
 
   isDesktop: boolean;
   isAutoResizeEnabled: boolean;
+
+  teamMembers: TeamMember[];
 }
 
 export default class FeedbackBoardContainer
@@ -107,6 +110,7 @@ export default class FeedbackBoardContainer
       teamBoardDeletedDialogMessage: '',
       teamBoardDeletedDialogTitle: '',
       userTeams: [],
+      teamMembers: [],
     };
   }
 
@@ -173,7 +177,7 @@ export default class FeedbackBoardContainer
 
   private toggleAndFixResolution = () => {
     const newView = !this.state.isDesktop;
-    
+
     this.setState({
       isAutoResizeEnabled: false,
       isDesktop: newView,
@@ -212,15 +216,9 @@ export default class FeedbackBoardContainer
           return (new Date(b2.createdDate).getTime() - new Date(b1.createdDate).getTime());
         });
 
-      const baseResult = {
-        boards: boardsForTeam,
-        isTeamBoardDeletedInfoDialogHidden: true,
-      };
+      const baseResult = { boards: boardsForTeam, isTeamBoardDeletedInfoDialogHidden: true };
       if (boardsForTeam.length === 1) {
-        return {
-          ...baseResult,
-          currentBoard: boardsForTeam[0],
-        };
+        return { ...baseResult, currentBoard: boardsForTeam[0] };
       }
 
       return baseResult;
@@ -245,17 +243,13 @@ export default class FeedbackBoardContainer
 
   private replaceBoard = (updatedBoard: IFeedbackBoardDocument) => {
     this.setState(prevState => {
-      const newBoards = prevState.boards.map((board) =>
-        board.id === updatedBoard.id ? updatedBoard : board);
+      const newBoards = prevState.boards.map((board) => board.id === updatedBoard.id ? updatedBoard : board);
 
       const newCurrentBoard = this.state.currentBoard && this.state.currentBoard.id === updatedBoard.id
         ? updatedBoard
         : this.state.currentBoard;
 
-      return {
-        boards: newBoards,
-        currentBoard: newCurrentBoard,
-      };
+      return { boards: newBoards, currentBoard: newCurrentBoard };
     })
   }
 
@@ -310,20 +304,18 @@ export default class FeedbackBoardContainer
         };
       }
 
-      return {
-        boards: boardsForTeam,
-      };
+      return { boards: boardsForTeam };
     }, async () => {
       await userDataService.addVisit(this.state.currentTeam.id, this.state.currentBoard && this.state.currentBoard.id);
     });
   }
 
   /**
-   * @description Loads team data for this project and the current user. Attempts to use query
-   * params or user records to pre-select team and board, otherwise default to the first team
-   * the current user is a part of and most recently created board.
-   * @returns An object to update the state with initialized team and board data.
-   */
+  * @description Loads team data for this project and the current user. Attempts to use query
+  * params or user records to pre-select team and board, otherwise default to the first team
+  * the current user is a part of and most recently created board.
+  * @returns An object to update the state with initialized team and board data.
+  */
   private initializeFeedbackBoard = async (): Promise<{
     userTeams: WebApiTeam[],
     filteredUserTeams: WebApiTeam[],
@@ -335,6 +327,7 @@ export default class FeedbackBoardContainer
     isTeamBoardDeletedInfoDialogHidden: boolean,
     teamBoardDeletedDialogTitle: string,
     teamBoardDeletedDialogMessage: string,
+    teamMembers: TeamMember[]
   }> => {
     const userTeams = await azureDevOpsCoreService.getAllTeams(this.props.projectId, true);
     if (userTeams && userTeams.length) {
@@ -348,6 +341,8 @@ export default class FeedbackBoardContainer
       ? userTeams[0]
       : await azureDevOpsCoreService.getDefaultTeam(this.props.projectId);
 
+    const defaultTeamMembers = await azureDevOpsCoreService.getTeamMembers(this.props.projectId, defaultTeam.id);
+
     const baseTeamState = {
       userTeams,
       filteredUserTeams: userTeams,
@@ -357,6 +352,7 @@ export default class FeedbackBoardContainer
       isTeamBoardDeletedInfoDialogHidden: true,
       teamBoardDeletedDialogTitle: '',
       teamBoardDeletedDialogMessage: '',
+      teamMembers: defaultTeamMembers
     };
 
     // Attempt to use query params to pre-select a specific team and board.
@@ -410,6 +406,7 @@ export default class FeedbackBoardContainer
     // Attempt to pre-select the team based on the teamId query param.
     const teamIdQueryParam = queryParams.get('teamId');
     const matchedTeam = await azureDevOpsCoreService.getTeam(this.props.projectId, teamIdQueryParam);
+    const matchedTeamMembers = await azureDevOpsCoreService.getTeamMembers(this.props.projectId, matchedTeam.id);
 
     if (!matchedTeam) {
       // If the teamId query param wasn't valid attempt to pre-select a team and board by last
@@ -425,6 +422,7 @@ export default class FeedbackBoardContainer
       return {
         ...baseTeamState,
         ...recentVisitWithDialogState,
+        teamMembers: matchedTeamMembers
       };
     }
 
@@ -487,9 +485,9 @@ export default class FeedbackBoardContainer
   }
 
   /**
-   * @description Load the last team and board that this user visited, if such records exist.
-   * @returns An object to update the state with recently visited or default team and board data.
-   */
+  * @description Load the last team and board that this user visited, if such records exist.
+  * @returns An object to update the state with recently visited or default team and board data.
+  */
   private loadRecentlyVisitedOrDefaultTeamAndBoardState = async (defaultTeam: WebApiTeam): Promise<{
     boards: IFeedbackBoardDocument[],
     currentBoard: IFeedbackBoardDocument,
@@ -542,10 +540,10 @@ export default class FeedbackBoardContainer
   }
 
   /**
-   * @description Attempts to select a team from the specified teamId. If the teamId is valid,
-   * currentTeam is set to the new team and that team's boards are loaded.
-   * @param teamId The id of the team to select.
-   */
+  * @description Attempts to select a team from the specified teamId. If the teamId is valid,
+  * currentTeam is set to the new team and that team's boards are loaded.
+  * @param teamId The id of the team to select.
+  */
   private setCurrentTeam = async (teamId: string) => {
     this.setState({ isTeamDataLoaded: false });
     const matchedTeam = this.state.projectTeams.find((team) => team.id === teamId) ||
@@ -586,9 +584,9 @@ export default class FeedbackBoardContainer
   }
 
   /**
-   * @description Loads all feedback boards for the current team. Defaults the selected board to
-   * the most recently created board.
-   */
+  * @description Loads all feedback boards for the current team. Defaults the selected board to
+  * the most recently created board.
+  */
   private reloadBoardsForCurrentTeam = async () => {
     this.setState({ isTeamDataLoaded: false });
 
@@ -619,10 +617,10 @@ export default class FeedbackBoardContainer
   }
 
   /**
-   * @description Attempts to select a board from the specified boardId. If the boardId is valid,
-   * currentBoard is set to the new board. If not, nothing changes.
-   * @param boardId The id of the board to select.
-   */
+  * @description Attempts to select a board from the specified boardId. If the boardId is valid,
+  * currentBoard is set to the new board. If not, nothing changes.
+  * @param boardId The id of the board to select.
+  */
   private setCurrentBoard = (selectedBoard: IFeedbackBoardDocument) => {
     const matchedBoard = this.state.boards.find((board) => board.id === selectedBoard.id);
 
