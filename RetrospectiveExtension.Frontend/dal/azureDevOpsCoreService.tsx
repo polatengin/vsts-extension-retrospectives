@@ -1,6 +1,7 @@
 import CoreClient = require('TFS/Core/RestClient');
 import VssService = require('VSS/Service');
 import Core_Contracts = require('TFS/Core/Contracts');
+import { TeamMember } from 'VSS/WebApi/Contracts';
 
 class AzureDevOpsCoreService {
   private _httpCoreClient: CoreClient.CoreHttpClient4_1;
@@ -17,10 +18,10 @@ class AzureDevOpsCoreService {
   }
 
   /**
-   * Gets the teams for the current project id.
-   * @param projectId The project id.
-   * @param teamId The team id.
-   */
+  * Gets the teams for the current project id.
+  * @param projectId The project id.
+  * @param teamId The team id.
+  */
   public async getTeam(projectId: string, teamId: string): Promise<Core_Contracts.WebApiTeam> {
     try {
       return await this._httpCoreClient.getTeam(projectId, teamId);
@@ -31,10 +32,19 @@ class AzureDevOpsCoreService {
   }
 
   /**
-   * Gets all the teams for the current project id.
-   * @param projectId The project id.
-   * @param forCurrentUserOnly If true, return teams the requesting user is a member of. If false, return teams the user can see in this project.
-   */
+  * Gets the team members for the current project id.
+  * @param projectId The project id.
+  * @param teamId The team id.
+  */
+  public async getTeamMembers(projectId: string, teamId: string): Promise<TeamMember[]> {
+    return await this._httpCoreClient.getTeamMembersWithExtendedProperties(projectId, teamId);
+  }
+
+  /**
+  * Gets all the teams for the current project id.
+  * @param projectId The project id.
+  * @param forCurrentUserOnly If true, return teams the requesting user is a member of. If false, return teams the user can see in this project.
+  */
   public async getAllTeams(projectId: string, forCurrentUserOnly: boolean):
     Promise<Core_Contracts.WebApiTeam[]> {
     const allTeams: Core_Contracts.WebApiTeam[] = [];
