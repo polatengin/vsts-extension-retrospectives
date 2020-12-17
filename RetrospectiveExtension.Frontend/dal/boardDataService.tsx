@@ -80,7 +80,7 @@ class BoardDataService {
 
     // Check in case board was deleted by other user after option to update was selected by current user
     if (!board) {
-      console.log(`Cannot update title for a non-existent feedback board. Board: ${boardId}`);
+      // `Cannot update title for a non-existent feedback board. Board: ${boardId}`
       return undefined;
     }
 
