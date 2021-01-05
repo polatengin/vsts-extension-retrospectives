@@ -343,6 +343,8 @@ export default class FeedbackBoardContainer
 
     const defaultTeamMembers = await azureDevOpsCoreService.getTeamMembers(this.props.projectId, defaultTeam.id);
 
+    console.log("defaultTeamMembers", defaultTeamMembers);
+
     const baseTeamState = {
       userTeams,
       filteredUserTeams: userTeams,
@@ -407,6 +409,8 @@ export default class FeedbackBoardContainer
     const teamIdQueryParam = queryParams.get('teamId');
     const matchedTeam = await azureDevOpsCoreService.getTeam(this.props.projectId, teamIdQueryParam);
     const matchedTeamMembers = await azureDevOpsCoreService.getTeamMembers(this.props.projectId, matchedTeam.id);
+
+    console.log("matchedTeamMembers", matchedTeamMembers);
 
     if (!matchedTeam) {
       // If the teamId query param wasn't valid attempt to pre-select a team and board by last
