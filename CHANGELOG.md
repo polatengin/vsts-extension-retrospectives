@@ -6,6 +6,8 @@ _PS: Unfortunately, changelog before v1.0.46 is not available_ 🤦‍♂️
 
 ## v1.XX.X
 
+
+
 * Boards can now restrict access down to specific teams or individuals. From [GitHub PR #650](https://github.com/microsoft/vsts-extension-retrospectives/pull/650)
 
 * Feedback items are numbered from 1, not 0. From [GitHub PR #663](https://github.com/microsoft/vsts-extension-retrospectives/pull/663)
